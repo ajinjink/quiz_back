@@ -11,6 +11,7 @@ import { ShortAnswerQuiz } from './short-answer-quiz/short-answer-quiz.entity';
 import { EvaluateModule } from './evaluate/evaluate.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
+import { getTypeOrmConfig } from './config/typeorm.config';
 
 @Module({
     imports: [
@@ -19,19 +20,14 @@ import { AuthModule } from './auth/auth.module';
         }),
         TypeOrmModule.forRootAsync({
           imports: [ConfigModule],
-          useFactory: (configService: ConfigService) => ({
-              type: 'postgres',
-              host: 'localhost',
-              port: 5432,
-              username: configService.get('DB_USERNAME'),
-              password: configService.get('DB_PASSWORD'),
-              database: configService.get('DB_NAME'),
-              entities: [User, QuizSet, ShortAnswerQuiz],
-              synchronize: configService.get('NODE_ENV') !== 'production',
-          }),
+	  useFactory: (configService: ConfigService) => getTypeOrmConfig(configService),
           inject: [ConfigService],
         }),
-        UsersModule, QuizSetModule, ShortAnswerQuizModule, EvaluateModule, AuthModule],
+        UsersModule,
+	QuizSetModule,
+	ShortAnswerQuizModule,
+	EvaluateModule,
+	AuthModule],
     controllers: [AppController],
     providers: [AppService],
 })
