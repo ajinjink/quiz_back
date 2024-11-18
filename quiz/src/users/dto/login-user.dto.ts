@@ -1,5 +1,5 @@
 import { IsString, IsNotEmpty } from 'class-validator';
-import { Exclude } from 'class-transformer';
+import { Exclude, Expose } from 'class-transformer';
 
 export class LoginUserDto {
     @IsString()
@@ -11,13 +11,38 @@ export class LoginUserDto {
     password: string;
 }
 
-export class LoginUserResponseDto {
+export class UserProfileDto {
+    @Expose()
+    userID: string;
+
+    @Expose()
     username: string;
 
-    @Exclude()
-    password: string;
+    @Expose()
+    email: string;
 
-    constructor(partial: Partial<LoginUserResponseDto>) {
+    @Expose()
+    university: string;
+
+    @Expose()
+    department: string;
+
+    constructor(partial: Partial<UserProfileDto>) {
         Object.assign(this, partial);
+    }
+}
+
+export class LoginResponseDto {
+    @Expose()
+    accessToken: string;
+
+    @Expose()
+    user: UserProfileDto;
+
+    constructor(partial: Partial<LoginResponseDto>) {
+        if (partial && partial.user) {
+            this.user = new UserProfileDto(partial.user);
+        }
+        this.accessToken = partial.accessToken;
     }
 }

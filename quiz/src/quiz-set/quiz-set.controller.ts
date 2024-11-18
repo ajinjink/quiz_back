@@ -28,19 +28,19 @@ export class QuizSetController {
     }
 
     @Get(':id')
-    async getQuizzesBySetId(@Param('id') id: string, @GetUser() user: User) {
-        const quizSet = await this.quizSetService.getQuizSetById(id);
-        if (quizSet.creator !== user.userID && !quizSet.sharedList.includes(user.userID)) {
+    async getQuizProblemsBySetId(@Param('id') id: string, @GetUser() user: User) {
+        const hasAccess = await this.quizSetService.hasAccess(user.userID, id);
+        if (!hasAccess) {
             throw new ForbiddenException('You do not have permission to access this quiz set');
         }
-        return this.quizSetService.getQuizzesBySetId(id);
+        return this.quizSetService.getQuizProblemsBySetId(id);
     }
 
     @Put(':id')
     async updateQuizSet(@Param('id') id: string, @Body() updateQuizSetDto: UpdateQuizSetDto, @GetUser() user: User) {
         const quizSet = await this.quizSetService.getQuizSetById(id);
-        if (quizSet.creator !== user.userID && !quizSet.sharedList.includes(user.userID)) {
-            throw new ForbiddenException('You do not have permission to access this quiz set');
+        if (quizSet.creatorId !== user.userID) {
+            throw new ForbiddenException('Only the creator can update this quiz set');
         }
         return this.quizSetService.updateQuizSet(id, updateQuizSetDto);
     }
@@ -51,7 +51,18 @@ export class QuizSetController {
         @Body('recipientId') recipientId: string,
         @GetUser() user: User
     ) {
-        return this.quizSetService.shareQuizSet(quizSetId, user.userID, recipientId);
+        await this.quizSetService.shareQuizSet(quizSetId, user.userID, recipientId);
+        return { message: 'Quiz set shared successfully' };
+    }
+
+    @Delete(':id/share')
+    async unshareQuizSet(
+        @Param('id') quizSetId: string,
+        @Body('username') username: string,
+        @GetUser() user: User
+    ) {
+        await this.quizSetService.unshareQuizSet(quizSetId, username, user.userID);
+        return { message: 'Quiz set sharing removed successfully' };
     }
 
     @Delete(':id')

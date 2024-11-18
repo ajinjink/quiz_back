@@ -1,4 +1,4 @@
-import { IsString, IsBoolean, IsArray, IsNumber, ValidateNested, IsEnum } from 'class-validator';
+import { IsString, IsBoolean, IsArray, IsNumber, ValidateNested, IsEnum, IsOptional } from 'class-validator';
 import { Type } from 'class-transformer';
 
 enum QuizType {
@@ -25,6 +25,13 @@ export class CreateQuizSetDto {
 
   @IsBoolean()
   public: boolean;
+
+  @IsString()
+  subject: string;
+
+  @IsString()
+  @IsOptional()
+  book: string | null;
 
   @IsEnum(QuizType)
   quizType: QuizType;

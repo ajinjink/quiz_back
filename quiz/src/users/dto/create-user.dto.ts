@@ -14,6 +14,14 @@ export class CreateUserDto {
 
     @IsEmail()
     email: string;
+
+    @IsString()
+    @IsNotEmpty()
+    university: string;
+
+    @IsString()
+    @IsNotEmpty()
+    department: string;
 }
 
 
@@ -24,6 +32,10 @@ export class CreateUserResponseDto {
     password: string;
 
     email: string;
+
+    university: string;
+    
+    department: string;
 
     constructor(partial: Partial<CreateUserResponseDto>) {
         Object.assign(this, partial);

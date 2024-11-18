@@ -1,7 +1,7 @@
 import { Controller, Post, Body, ValidationPipe, UseInterceptors, ClassSerializerInterceptor } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto, CreateUserResponseDto } from './dto/create-user.dto';
-import { LoginUserDto, LoginUserResponseDto } from './dto/login-user.dto';
+import { LoginUserDto, LoginResponseDto } from './dto/login-user.dto';
 
 @Controller('auth')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -16,7 +16,7 @@ export class UsersController {
   }
 
   @Post('login')
-  async login(@Body(ValidationPipe) loginUserDto: LoginUserDto): Promise<{ accessToken: string }> {
+  async login(@Body(ValidationPipe) loginUserDto: LoginUserDto): Promise<LoginResponseDto> {
     return this.usersService.login(loginUserDto);
   }
 }

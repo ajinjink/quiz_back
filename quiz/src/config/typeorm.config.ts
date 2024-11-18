@@ -1,8 +1,10 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { User } from '../users/users.entity';
-import { QuizSet } from '../quiz-set/quiz-set.entity';
-import { ShortAnswerQuiz } from '../short-answer-quiz/short-answer-quiz.entity';
+import { QuizSet } from '../quiz-set/entities/quiz-set.entity';
+import { QuizSetShare } from 'src/quiz-set/entities/quiz-set-share.entity';
+import { ShortAnswerQuiz } from 'src/quiz-types/short-answer-quiz/short-answer-quiz.entity';
+import { QuizAttemptHistory } from 'src/quiz-set/entities/quiz-attempt-history.entity';
 
 export const getTypeOrmConfig = (configService: ConfigService): TypeOrmModuleOptions => ({
     type: 'postgres',
@@ -11,6 +13,6 @@ export const getTypeOrmConfig = (configService: ConfigService): TypeOrmModuleOpt
     username: configService.get('DB_USERNAME'),
     password: configService.get('DB_PASSWORD'),
     database: configService.get('DB_NAME'),
-    entities: [User, QuizSet, ShortAnswerQuiz],
+    entities: [User, QuizSet, QuizSetShare, ShortAnswerQuiz, QuizAttemptHistory],
     synchronize: configService.get('NODE_ENV') !== 'production',
 });

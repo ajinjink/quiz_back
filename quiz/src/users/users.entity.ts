@@ -1,5 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
 import { Exclude } from 'class-transformer';
+import { QuizSet } from 'src/quiz-set/entities/quiz-set.entity';
+import { QuizSetShare } from 'src/quiz-set/entities/quiz-set-share.entity';
+import { QuizAttemptHistory } from 'src/quiz-set/entities/quiz-attempt-history.entity';
 
 @Entity('users')
 export class User {
@@ -16,15 +19,25 @@ export class User {
   @Column({ unique: true })
   email: string;
 
-  @Column('simple-array')
-  createdList: string[];
+  @Column()
+  university: string;
 
-  @Column('simple-array')
-  sharedList: string[];
+  @Column()
+  department: string;
+
+  @OneToMany(() => QuizSet, quizSet => quizSet.creator)
+  createdQuizSets: QuizSet[];
+
+  @OneToMany(() => QuizSetShare, share => share.user)
+  sharedQuizSets: QuizSetShare[];
 
   @CreateDateColumn()
   createdAt: Date;
 
   @UpdateDateColumn()
   updatedAt: Date;
-}
+
+  @OneToMany(() => QuizAttemptHistory, attempt => attempt.user)
+  quizAttempts: QuizAttemptHistory[];
+
+  }

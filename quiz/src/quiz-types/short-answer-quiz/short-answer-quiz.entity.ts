@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { QuizSet } from '../quiz-set/quiz-set.entity';
+import { QuizSet } from './../../quiz-set/entities/quiz-set.entity';
 
 @Entity()
 export class ShortAnswerQuiz {

@@ -25,6 +25,7 @@ export class EvaluateService {
       2. "explanation": a brief explanation of why the answer is considered correct or incorrect
 
       Your response should be a valid JSON object and nothing else. Do not include any additional text, markdown formatting, or code blocks.
+      And explanation should be in Korean.
     `;
     console.log(prompt);
 

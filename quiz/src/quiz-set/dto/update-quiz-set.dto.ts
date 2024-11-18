@@ -27,6 +27,14 @@ export class UpdateQuizSetDto {
   public?: boolean;
 
   @IsOptional()
+  @IsString()
+  subject?: string;
+
+  @IsOptional()
+  @IsString()
+  book?: string;
+
+  @IsOptional()
   @IsEnum(QuizType)
   quizType?: QuizType;
 

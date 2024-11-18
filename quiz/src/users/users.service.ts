@@ -6,6 +6,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
+import { LoginResponseDto } from './dto/login-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -16,7 +17,7 @@ export class UsersService {
     ) {}
 
     async signup(createUserDto: CreateUserDto): Promise<User> {
-        const { username, password, email } = createUserDto;
+        const { username, password, email, university, department } = createUserDto;
 
         const existingUser = await this.usersRepository.findOne({ where: [{ username }, { email }] });
         if (existingUser) {
@@ -29,14 +30,14 @@ export class UsersService {
             username,
             password: hashedPassword,
             email,
-            createdList: [],
-            sharedList: [],
+            university,
+            department
         });
 
         return this.usersRepository.save(user);
     }
 
-    async login(loginUserDto: LoginUserDto): Promise<{ accessToken: string }> {
+    async login(loginUserDto: LoginUserDto): Promise<LoginResponseDto> {
         const { username, password } = loginUserDto;
         const user = await this.usersRepository.findOne({ where: { username } });
 
@@ -53,6 +54,13 @@ export class UsersService {
         const payload = { username: user.username, sub: user.userID };
         return {
             accessToken: this.jwtService.sign(payload),
+            user: {
+                userID: user.userID,
+                username: user.username,
+                email: user.email,
+                university: user.university,
+                department: user.department
+            }
         };
     }
 
@@ -74,51 +82,59 @@ export class UsersService {
         return user;
     }
 
-    async addCreatedQuizSet(userId: string, quizSetId: string): Promise<User> {
-        const user = await this.usersRepository.findOne({ where: { userID: userId } });
+    async getUserByUsername(username: string): Promise<User> {
+        const user = await this.usersRepository.findOne({ where: { username: username } });
         if (!user) {
-            throw new NotFoundException(`User with ID ${userId} not found`);
+          throw new NotFoundException('User not found');
         }
-
-        user.createdList = [...user.createdList, quizSetId];
-        return this.usersRepository.save(user);
-    }
-
-    async addSharedQuizSet(userId: string, quizSetId: string): Promise<User> {
-        const user = await this.usersRepository.findOne({ where: { userID: userId } });
-        
-        if (!user) {
-            throw new NotFoundException('User not found');
-        }
-    
-        if (!user.sharedList.includes(quizSetId)) {
-            user.sharedList = [...user.sharedList, quizSetId];
-            return this.usersRepository.save(user);
-        }
-    
         return user;
     }
 
-    async removeCreatedQuizSet(userId: string, quizSetId: string): Promise<User> {
-        const user = await this.usersRepository.findOne({ where: { userID: userId } });
+    // async addCreatedQuizSet(userId: string, quizSetId: string): Promise<User> {
+    //     const user = await this.usersRepository.findOne({ where: { userID: userId } });
+    //     if (!user) {
+    //         throw new NotFoundException(`User with ID ${userId} not found`);
+    //     }
+
+    //     user.createdList = [...user.createdList, quizSetId];
+    //     return this.usersRepository.save(user);
+    // }
+
+    // async addSharedQuizSet(userId: string, quizSetId: string): Promise<User> {
+    //     const user = await this.usersRepository.findOne({ where: { userID: userId } });
         
-        if (!user) {
-            throw new NotFoundException('User not found');
-        }
+    //     if (!user) {
+    //         throw new NotFoundException('User not found');
+    //     }
     
-        user.createdList = user.createdList.filter(id => id !== quizSetId);
-        return this.usersRepository.save(user);
-    }
+    //     if (!user.sharedList.includes(quizSetId)) {
+    //         user.sharedList = [...user.sharedList, quizSetId];
+    //         return this.usersRepository.save(user);
+    //     }
+    
+    //     return user;
+    // }
+
+    // async removeCreatedQuizSet(userId: string, quizSetId: string): Promise<User> {
+    //     const user = await this.usersRepository.findOne({ where: { userID: userId } });
+        
+    //     if (!user) {
+    //         throw new NotFoundException('User not found');
+    //     }
+    
+    //     user.createdList = user.createdList.filter(id => id !== quizSetId);
+    //     return this.usersRepository.save(user);
+    // }
   
-    async removeSharedQuizSet(userId: string, quizSetId: string): Promise<User> {
-        const user = await this.usersRepository.findOne({ where: { userID: userId } });
+    // async removeSharedQuizSet(userId: string, quizSetId: string): Promise<User> {
+    //     const user = await this.usersRepository.findOne({ where: { userID: userId } });
         
-        if (!user) {
-            throw new NotFoundException('User not found');
-        }
+    //     if (!user) {
+    //         throw new NotFoundException('User not found');
+    //     }
     
-        user.sharedList = user.sharedList.filter(id => id !== quizSetId);
-        return this.usersRepository.save(user);
-    }
+    //     user.sharedList = user.sharedList.filter(id => id !== quizSetId);
+    //     return this.usersRepository.save(user);
+    // }
 
 }
