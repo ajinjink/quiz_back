@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
-import { ShortAnswerQuiz } from 'src/quiz-types/short-answer-quiz/short-answer-quiz.entity';
-import { User } from 'src/users/users.entity';
+import { ShortAnswerQuiz } from '../../quiz-types/short-answer-quiz/short-answer-quiz.entity';
+import { User } from '../../users/users.entity';
 import { QuizSetShare } from './quiz-set-share.entity';
 import { QuizAttemptHistory } from './quiz-attempt-history.entity';
 

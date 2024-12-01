@@ -2,9 +2,9 @@ import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { User } from '../users/users.entity';
 import { QuizSet } from '../quiz-set/entities/quiz-set.entity';
-import { QuizSetShare } from 'src/quiz-set/entities/quiz-set-share.entity';
-import { ShortAnswerQuiz } from 'src/quiz-types/short-answer-quiz/short-answer-quiz.entity';
-import { QuizAttemptHistory } from 'src/quiz-set/entities/quiz-attempt-history.entity';
+import { QuizSetShare } from '../quiz-set/entities/quiz-set-share.entity';
+import { ShortAnswerQuiz } from '../quiz-types/short-answer-quiz/short-answer-quiz.entity';
+import { QuizAttemptHistory } from '../quiz-set/entities/quiz-attempt-history.entity';
 
 export const getTypeOrmConfig = (configService: ConfigService): TypeOrmModuleOptions => ({
     type: 'postgres',

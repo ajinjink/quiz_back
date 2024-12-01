@@ -1,8 +1,8 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
 import { Exclude } from 'class-transformer';
-import { QuizSet } from 'src/quiz-set/entities/quiz-set.entity';
-import { QuizSetShare } from 'src/quiz-set/entities/quiz-set-share.entity';
-import { QuizAttemptHistory } from 'src/quiz-set/entities/quiz-attempt-history.entity';
+import { QuizSet } from '../quiz-set/entities/quiz-set.entity';
+import { QuizSetShare } from '../quiz-set/entities/quiz-set-share.entity';
+import { QuizAttemptHistory } from '../quiz-set/entities/quiz-attempt-history.entity';
 
 @Entity('users')
 export class User {

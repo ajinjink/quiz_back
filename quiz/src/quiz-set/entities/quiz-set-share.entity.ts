@@ -1,5 +1,5 @@
 import { Entity, ManyToOne, JoinColumn, PrimaryColumn } from 'typeorm';
-import { User } from 'src/users/users.entity';
+import { User } from '../../users/users.entity';
 import { QuizSet } from './quiz-set.entity';
 
 @Entity()

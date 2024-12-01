@@ -3,7 +3,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { QuizSetService } from './quiz-set.service';
 import { CreateQuizSetDto } from './dto/create-quiz-set.dto';
 import { UpdateQuizSetDto } from './dto/update-quiz-set.dto';
-import { User } from 'src/users/users.entity';
+import { User } from '../users/users.entity';
 import { GetUser } from './../auth/decorators/get-user.decorator';
 
 @Controller('quiz')

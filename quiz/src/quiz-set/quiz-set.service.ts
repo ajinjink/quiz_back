@@ -2,10 +2,10 @@ import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nest
 import { InjectRepository } from '@nestjs/typeorm';
 import { QuizSetRepository } from './repositories/quiz-set.repository';
 import { QuizSetShareRepository } from './repositories/quiz-set-share.repository';
-import { ShortAnswerQuizRepository } from 'src/quiz-types/short-answer-quiz/short-answer-quiz.repository';
+import { ShortAnswerQuizRepository } from '../quiz-types/short-answer-quiz/short-answer-quiz.repository';
 import { CreateQuizSetDto } from './dto/create-quiz-set.dto';
 import { QuizSet } from './entities/quiz-set.entity';
-import { ShortAnswerQuiz } from 'src/quiz-types/short-answer-quiz/short-answer-quiz.entity';
+import { ShortAnswerQuiz } from '../quiz-types/short-answer-quiz/short-answer-quiz.entity';
 import { UsersService } from './../users/users.service';
 import { UpdateQuizSetDto } from './dto/update-quiz-set.dto';
 import { QuizAttemptHistoryRepository } from './repositories/quiz-attempt-history.repository';
