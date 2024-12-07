@@ -1,10 +1,11 @@
-import { Controller, Get, Param, Post, Put, Patch, Delete, Body, UseGuards, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Param, Post, Put, Patch, Delete, Body, UseGuards, ForbiddenException, Query, DefaultValuePipe, ParseIntPipe } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { QuizSetService } from './quiz-set.service';
 import { CreateQuizSetDto } from './dto/create-quiz-set.dto';
 import { UpdateQuizSetDto } from './dto/update-quiz-set.dto';
 import { User } from '../users/users.entity';
 import { GetUser } from './../auth/decorators/get-user.decorator';
+import { SearchQuizSetDto } from './dto/search-quiz-set.dto';
 
 @Controller('quiz')
 @UseGuards(AuthGuard('jwt'))
@@ -27,9 +28,22 @@ export class QuizSetController {
         return this.quizSetService.getSharedQuizSets(user.userID);
     }
 
-    @Get('top-public')
-    async getTopPublicQuizSets() {
-        return this.quizSetService.getTopPublicQuizSets();
+    @Get('filtered')
+    async getFilteredPublicTopQuizSets(
+        @Query('university') university: string | null,
+        @Query('department') department: string | null,
+        @Query('limit', new DefaultValuePipe(8), ParseIntPipe) limit: number
+    ) {
+        return this.quizSetService.getFilteredPublicTopQuizSets(
+            university,
+            department,
+            limit
+        );
+    }
+
+    @Get('search')
+    async searchQuizSets(@Query() searchQuizSetDto: SearchQuizSetDto) {
+        return this.quizSetService.searchQuizSets(searchQuizSetDto);
     }
 
     @Get('recent')

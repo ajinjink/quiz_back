@@ -9,6 +9,8 @@ import { ShortAnswerQuiz } from '../quiz-types/short-answer-quiz/short-answer-qu
 import { UsersService } from './../users/users.service';
 import { UpdateQuizSetDto } from './dto/update-quiz-set.dto';
 import { QuizAttemptHistoryRepository } from './repositories/quiz-attempt-history.repository';
+import { SearchQuizSetDto } from './dto/search-quiz-set.dto';
+import { FrontQuizSetDto } from './dto/front-quiz-set.dto';
 import { DataSource } from 'typeorm';
 
 @Injectable()
@@ -23,6 +25,11 @@ export class QuizSetService {
     private quizAttemptHistoryRepository: QuizAttemptHistoryRepository,
     private dataSource: DataSource
   ) {}
+
+  private convertEnglishToLowerCase(text: string | null | undefined): string {
+    if (!text) return '';
+    return text.replace(/[A-Z]/g, match => match.toLowerCase());
+  }
 
   async createQuizSet(createQuizSetDto: CreateQuizSetDto, creatorId: string): Promise<QuizSet> {
     const { title, public: isPublic, subject, book, quizType, questions } = createQuizSetDto;
@@ -178,7 +185,6 @@ export class QuizSetService {
   }
 
   async shareQuizSet(quizSetId: string, creatorId: string, username: string): Promise<void> {
-    // 1. 퀴즈셋 확인
     const quizSet = await this.quizSetRepository.findOne({ 
         where: { setID: quizSetId } 
     });
@@ -187,18 +193,15 @@ export class QuizSetService {
         throw new NotFoundException('Quiz set not found');
     }
 
-    // 2. 생성자 권한 확인
     if (quizSet.creatorId !== creatorId) {
         throw new ForbiddenException('Only the creator can share this quiz set');
     }
 
-    // 3. username으로 대상 사용자 찾기
     const targetUser = await this.usersService.getUserByUsername(username);
     if (!targetUser) {
         throw new NotFoundException(`User ${username} not found`);
     }
 
-    // 4. 이미 공유된 상태인지 확인
     const existingShare = await this.quizSetShareRepository.findOne({
         where: { userId: targetUser.userID, quizSetId }
     });
@@ -207,12 +210,10 @@ export class QuizSetService {
         throw new ForbiddenException('This quiz set is already shared with the user');
     }
 
-    // 5. 공유 생성
     await this.quizSetShareRepository.shareQuizSet(targetUser.userID, quizSetId);
 }
 
   async unshareQuizSet(quizSetId: string, username: string, requestUserId: string): Promise<void> {
-    // 1. 퀴즈셋 확인
     const quizSet = await this.quizSetRepository.findOne({ 
         where: { setID: quizSetId } 
     });
@@ -221,18 +222,15 @@ export class QuizSetService {
         throw new NotFoundException('Quiz set not found');
     }
 
-    // 2. 요청한 사용자가 퀴즈셋의 생성자인지 확인
     if (quizSet.creatorId !== requestUserId) {
         throw new ForbiddenException('Only the creator can unshare this quiz set');
     }
 
-    // 3. username으로 대상 사용자 찾기
     const targetUser = await this.usersService.getUserByUsername(username);
     if (!targetUser) {
         throw new NotFoundException(`User ${username} not found`);
     }
 
-    // 4. 공유 기록 있는지 확인
     const share = await this.quizSetShareRepository.findOne({
         where: {
             userId: targetUser.userID,
@@ -244,7 +242,6 @@ export class QuizSetService {
         throw new NotFoundException(`Quiz set is not shared with user ${username}`);
     }
 
-    // 5. 공유 제거
     await this.quizSetShareRepository.delete({
         userId: targetUser.userID,
         quizSetId
@@ -267,25 +264,20 @@ export class QuizSetService {
         throw new ForbiddenException('Only the creator can delete this quiz set');
       }
 
-      // Delete all attempt histories first
       await queryRunner.manager.delete('quiz_attempt_history', { quizSetId: setId });
 
-      // Delete all shares
       await queryRunner.manager.delete('quiz_set_share', { quizSetId: setId });
 
-      // Delete associated short answer quizzes if applicable
       if (quizSet.quizType === 'short_answers') {
         await queryRunner.manager.delete('short_answer_quiz', { quizSetID: setId });
       }
 
-      // Finally, delete the quiz set itself
       await queryRunner.manager.remove('quiz_set', quizSet);
 
-      // Commit the transaction
       await queryRunner.commitTransaction();
 
     } catch (error) {
-      // If we encounter any error, rollback the changes
+      // If error, rollback the changes
       await queryRunner.rollbackTransaction();
       this.logger.error(`Failed to delete quiz set: ${error.message}`, error.stack);
       throw error;
@@ -337,23 +329,47 @@ export class QuizSetService {
     return this.quizSetRepository.save(quizSet);
   }
 
-  async getTopPublicQuizSets(): Promise<QuizSet[]> {
-    return this.quizSetRepository.find({
-      where: { public: true },
-      order: { cnt: 'DESC' },
-      take: 8,
-      select: {
-        setID: true,
-        title: true,
-        public: true,
-        quizType: true,
-        cnt: true,
-        university: true,
-        subject: true,
-        book: true,
-        creatorId: true
-      }
-    });
+  async getFilteredPublicTopQuizSets(
+    university: string | null,
+    department: string | null,
+    limit: number = 8
+  ): Promise<any[]> {
+    const queryBuilder = this.quizSetRepository
+      .createQueryBuilder('quizSet')
+      .leftJoinAndSelect('quizSet.creator', 'creator')
+      .leftJoinAndSelect('quizSet.shares', 'shares')
+      .leftJoinAndSelect('shares.user', 'sharedUser')
+      .where('quizSet.public = :public', { public: true });
+  
+    if (university) {
+      queryBuilder.andWhere('creator.university = :university', { university });
+    }
+  
+    if (department) {
+      queryBuilder.andWhere('creator.department = :department', { department });
+    }
+  
+    const quizSets = await queryBuilder
+      .orderBy('quizSet.cnt', 'DESC')
+      .take(limit)
+      .getMany();
+  
+    return quizSets.map(quizSet => ({
+      setID: Number(quizSet.setID),
+      title: quizSet.title,
+      creator: quizSet.creator.username,
+      public: quizSet.public,
+      university: quizSet.university || null,
+      department: null,
+      subject: quizSet.subject || null,
+      book: quizSet.book || null,
+      quizType: quizSet.quizType,
+      sharedWith: quizSet.shares 
+        ? quizSet.shares.map(share => share.user.username)
+        : [],
+      cnt: quizSet.cnt,
+      lastAttemptDate: null
+    }));
   }
 
   async getRecentAttemptedQuizSets(userId: string): Promise<any[]> {
@@ -365,7 +381,7 @@ export class QuizSetService {
       .leftJoinAndSelect('shares.user', 'sharedUser')
       .where('attempt.userId = :userId', { userId })
       .orderBy('attempt.lastAttemptDate', 'DESC')
-      .take(4)
+      .take(8)
       .getMany();
   
     return recentAttempts.map(attempt => ({
@@ -387,4 +403,57 @@ export class QuizSetService {
         : null
     }));
   }
+
+  async searchQuizSets(searchDto: SearchQuizSetDto): Promise<FrontQuizSetDto[]> {
+    const queryBuilder = this.quizSetRepository
+        .createQueryBuilder('quizSet')
+        .leftJoinAndSelect('quizSet.creator', 'creator')
+        .leftJoinAndSelect('quizSet.shares', 'shares')
+        .leftJoinAndSelect('shares.user', 'sharedUser')
+        .where('quizSet.public = :public', { public: true });
+
+    const keyword = searchDto?.keyword?.trim();
+    
+    if (keyword) {
+        const processedKeyword = this.convertEnglishToLowerCase(keyword);
+        
+        queryBuilder.andWhere(
+            '(quizSet.university ILIKE :keyword OR ' +
+            'creator.department ILIKE :keyword OR ' +
+            'quizSet.subject ILIKE :keyword OR ' +
+            'quizSet.book ILIKE :keyword OR ' +
+            'quizSet.title ILIKE :keyword)',
+            { keyword: `%${processedKeyword}%` }
+        );
+    }
+
+    queryBuilder
+        .orderBy('quizSet.cnt', 'DESC')
+        .addOrderBy('quizSet.setID', 'DESC');
+
+    const quizSets = await queryBuilder.getMany();
+
+    return quizSets.map(quizSet => {
+        const sharedWith = quizSet.shares
+            ? quizSet.shares.map(share => share.user.username)
+            : [];
+
+        const result: FrontQuizSetDto = {
+            setID: Number(quizSet.setID),
+            title: quizSet.title,
+            creator: quizSet.creator?.username || 'Unknown',
+            public: quizSet.public,
+            university: quizSet.university || null,
+            department: quizSet.creator?.department || null,
+            subject: quizSet.subject || null,
+            book: quizSet.book || null,
+            quizType: quizSet.quizType,
+            sharedWith: sharedWith,
+            cnt: quizSet.cnt,
+            lastAttemptDate: null
+        };
+
+        return result;
+    });
+}
 }
