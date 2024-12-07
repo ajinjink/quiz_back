@@ -1,4 +1,4 @@
-import { Controller, Post, Body, ValidationPipe, UseInterceptors, ClassSerializerInterceptor } from '@nestjs/common';
+import { Controller, Get, Post, Body, ValidationPipe, UseInterceptors, ClassSerializerInterceptor, Query } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto, CreateUserResponseDto } from './dto/create-user.dto';
 import { LoginUserDto, LoginResponseDto } from './dto/login-user.dto';
@@ -18,5 +18,17 @@ export class UsersController {
   @Post('login')
   async login(@Body(ValidationPipe) loginUserDto: LoginUserDto): Promise<LoginResponseDto> {
     return this.usersService.login(loginUserDto);
+  }
+
+  @Get('check-username')
+  async checkUsername(@Query('username') username: string): Promise<{ exists: boolean }> {
+    const exists = await this.usersService.checkUsernameExists(username);
+    return { exists };
+  }
+
+  @Get('check-email')
+  async checkEmail(@Query('email') email: string): Promise<{ exists: boolean }> {
+    const exists = await this.usersService.checkEmailExists(email);
+    return { exists };
   }
 }

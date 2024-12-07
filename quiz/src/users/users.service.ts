@@ -74,6 +74,16 @@ export class UsersService {
           return bcrypt.compare(plainTextPassword, hashedPassword);
     }
 
+    async checkUsernameExists(username: string): Promise<boolean> {
+        const user = await this.usersRepository.findOne({ where: { username } });
+        return !!user;
+    }
+
+    async checkEmailExists(email: string): Promise<boolean> {
+        const user = await this.usersRepository.findOne({ where: { email } });
+        return !!user;
+    }
+
     async getUserById(userId: string): Promise<User> {
         const user = await this.usersRepository.findOne({ where: { userID: userId } });
         if (!user) {
@@ -90,51 +100,5 @@ export class UsersService {
         return user;
     }
 
-    // async addCreatedQuizSet(userId: string, quizSetId: string): Promise<User> {
-    //     const user = await this.usersRepository.findOne({ where: { userID: userId } });
-    //     if (!user) {
-    //         throw new NotFoundException(`User with ID ${userId} not found`);
-    //     }
-
-    //     user.createdList = [...user.createdList, quizSetId];
-    //     return this.usersRepository.save(user);
-    // }
-
-    // async addSharedQuizSet(userId: string, quizSetId: string): Promise<User> {
-    //     const user = await this.usersRepository.findOne({ where: { userID: userId } });
-        
-    //     if (!user) {
-    //         throw new NotFoundException('User not found');
-    //     }
-    
-    //     if (!user.sharedList.includes(quizSetId)) {
-    //         user.sharedList = [...user.sharedList, quizSetId];
-    //         return this.usersRepository.save(user);
-    //     }
-    
-    //     return user;
-    // }
-
-    // async removeCreatedQuizSet(userId: string, quizSetId: string): Promise<User> {
-    //     const user = await this.usersRepository.findOne({ where: { userID: userId } });
-        
-    //     if (!user) {
-    //         throw new NotFoundException('User not found');
-    //     }
-    
-    //     user.createdList = user.createdList.filter(id => id !== quizSetId);
-    //     return this.usersRepository.save(user);
-    // }
-  
-    // async removeSharedQuizSet(userId: string, quizSetId: string): Promise<User> {
-    //     const user = await this.usersRepository.findOne({ where: { userID: userId } });
-        
-    //     if (!user) {
-    //         throw new NotFoundException('User not found');
-    //     }
-    
-    //     user.sharedList = user.sharedList.filter(id => id !== quizSetId);
-    //     return this.usersRepository.save(user);
-    // }
 
 }
