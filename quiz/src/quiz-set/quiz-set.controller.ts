@@ -27,6 +27,16 @@ export class QuizSetController {
         return this.quizSetService.getSharedQuizSets(user.userID);
     }
 
+    @Get('top-public')
+    async getTopPublicQuizSets() {
+        return this.quizSetService.getTopPublicQuizSets();
+    }
+
+    @Get('recent')
+    async getRecentAttemptedQuizSets(@GetUser() user: User) {
+        return this.quizSetService.getRecentAttemptedQuizSets(user.userID);
+    }
+
     @Get(':id')
     async getQuizProblemsBySetId(@Param('id') id: string, @GetUser() user: User) {
         const hasAccess = await this.quizSetService.hasAccess(user.userID, id);
@@ -48,10 +58,11 @@ export class QuizSetController {
     @Post(':id/share')
     async shareQuizSet(
         @Param('id') quizSetId: string,
-        @Body('recipientId') recipientId: string,
+        @Body('username') username: string, // recipientId 대신 username을 받도록 수정
         @GetUser() user: User
     ) {
-        await this.quizSetService.shareQuizSet(quizSetId, user.userID, recipientId);
+        console.log(quizSetId, username);
+        await this.quizSetService.shareQuizSet(quizSetId, user.userID, username);
         return { message: 'Quiz set shared successfully' };
     }
 
@@ -78,6 +89,8 @@ export class QuizSetController {
     async incrementQuizSetCount(@Param('id') id: string, @GetUser() user: User) {
         return this.quizSetService.incrementQuizSetCount(id, user.userID);
     }
+
+    
 }
 
 

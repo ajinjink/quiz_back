@@ -177,29 +177,39 @@ export class QuizSetService {
     }
   }
 
-  async shareQuizSet(quizSetId: string, creatorId: string, recipientId: string): Promise<void> {
-    const quizSet = await this.quizSetRepository.findOne({ where: { setID: quizSetId } });
+  async shareQuizSet(quizSetId: string, creatorId: string, username: string): Promise<void> {
+    // 1. 퀴즈셋 확인
+    const quizSet = await this.quizSetRepository.findOne({ 
+        where: { setID: quizSetId } 
+    });
     
     if (!quizSet) {
-      throw new NotFoundException('Quiz set not found');
+        throw new NotFoundException('Quiz set not found');
     }
 
+    // 2. 생성자 권한 확인
     if (quizSet.creatorId !== creatorId) {
-      throw new ForbiddenException('Only the creator can share this quiz set');
+        throw new ForbiddenException('Only the creator can share this quiz set');
     }
 
-    // Check if already shared
+    // 3. username으로 대상 사용자 찾기
+    const targetUser = await this.usersService.getUserByUsername(username);
+    if (!targetUser) {
+        throw new NotFoundException(`User ${username} not found`);
+    }
+
+    // 4. 이미 공유된 상태인지 확인
     const existingShare = await this.quizSetShareRepository.findOne({
-      where: { userId: recipientId, quizSetId }
+        where: { userId: targetUser.userID, quizSetId }
     });
 
     if (existingShare) {
-      throw new ForbiddenException('This quiz set is already shared with the user');
+        throw new ForbiddenException('This quiz set is already shared with the user');
     }
 
-    // Create new share
-    await this.quizSetShareRepository.shareQuizSet(recipientId, quizSetId);
-  }
+    // 5. 공유 생성
+    await this.quizSetShareRepository.shareQuizSet(targetUser.userID, quizSetId);
+}
 
   async unshareQuizSet(quizSetId: string, username: string, requestUserId: string): Promise<void> {
     // 1. 퀴즈셋 확인
@@ -325,5 +335,56 @@ export class QuizSetService {
 
     quizSet.cnt += 1;
     return this.quizSetRepository.save(quizSet);
+  }
+
+  async getTopPublicQuizSets(): Promise<QuizSet[]> {
+    return this.quizSetRepository.find({
+      where: { public: true },
+      order: { cnt: 'DESC' },
+      take: 8,
+      select: {
+        setID: true,
+        title: true,
+        public: true,
+        quizType: true,
+        cnt: true,
+        university: true,
+        subject: true,
+        book: true,
+        creatorId: true
+      }
+    });
+  }
+
+  async getRecentAttemptedQuizSets(userId: string): Promise<any[]> {
+    const recentAttempts = await this.quizAttemptHistoryRepository
+      .createQueryBuilder('attempt')
+      .leftJoinAndSelect('attempt.quizSet', 'quizSet')
+      .leftJoinAndSelect('quizSet.creator', 'creator')
+      .leftJoinAndSelect('quizSet.shares', 'shares')
+      .leftJoinAndSelect('shares.user', 'sharedUser')
+      .where('attempt.userId = :userId', { userId })
+      .orderBy('attempt.lastAttemptDate', 'DESC')
+      .take(4)
+      .getMany();
+  
+    return recentAttempts.map(attempt => ({
+      setID: attempt.quizSet.setID,
+      title: attempt.quizSet.title,
+      creator: attempt.quizSet.creator.username,
+      public: attempt.quizSet.public,
+      university: attempt.quizSet.university || null,
+      department: attempt.quizSet.department || null,
+      subject: attempt.quizSet.subject || null,
+      book: attempt.quizSet.book || null,
+      quizType: attempt.quizSet.quizType,
+      sharedWith: attempt.quizSet.shares 
+        ? attempt.quizSet.shares.map(share => share.user.username)
+        : [],
+      cnt: attempt.quizSet.cnt,
+      lastAttemptDate: attempt.lastAttemptDate 
+        ? attempt.lastAttemptDate.toISOString()
+        : null
+    }));
   }
 }

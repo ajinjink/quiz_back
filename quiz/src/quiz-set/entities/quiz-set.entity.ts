@@ -22,13 +22,16 @@ export class QuizSet {
   @Column()
   public: boolean;
 
-  @Column()
+  @Column({nullable: true})
   university: string;
+
+  @Column({nullable: true})
+  department: string;
 
   @Column()
   subject: string;
 
-  @Column()
+  @Column({nullable: true})
   book: string;
 
   @Column()
