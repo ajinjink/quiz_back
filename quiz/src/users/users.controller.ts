@@ -1,7 +1,10 @@
-import { Controller, Get, Post, Body, ValidationPipe, UseInterceptors, ClassSerializerInterceptor, Query } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, ValidationPipe, UseInterceptors, ClassSerializerInterceptor, Query, UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto, CreateUserResponseDto } from './dto/create-user.dto';
 import { LoginUserDto, LoginResponseDto } from './dto/login-user.dto';
+import { AuthGuard } from '@nestjs/passport';
+import { GetUser } from '../auth/decorators/get-user.decorator';
+import { User } from './users.entity';
 
 @Controller('auth')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -30,5 +33,12 @@ export class UsersController {
   async checkEmail(@Query('email') email: string): Promise<{ exists: boolean }> {
     const exists = await this.usersService.checkEmailExists(email);
     return { exists };
+  }
+
+  @Delete('withdraw')
+  @UseGuards(AuthGuard('jwt'))
+  async withdrawUser(@GetUser() user: User): Promise<{ message: string }> {
+    await this.usersService.withdrawUser(user.userID);
+    return { message: 'User successfully deleted' };
   }
 }

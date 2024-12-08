@@ -1,19 +1,20 @@
 import { Injectable, ConflictException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { User } from './users.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import * as bcrypt from 'bcrypt';
-import { JwtService } from '@nestjs/jwt';
-import { LoginResponseDto } from './dto/login-user.dto';
+import { AuthService } from '../auth/auth.service';
+import { DataSource } from 'typeorm';
 
 @Injectable()
 export class UsersService {
     constructor(
         @InjectRepository(User)
         private usersRepository: Repository<User>,
-        private jwtService: JwtService
+        private authService: AuthService,
+        private dataSource: DataSource
     ) {}
 
     async signup(createUserDto: CreateUserDto): Promise<User> {
@@ -37,7 +38,7 @@ export class UsersService {
         return this.usersRepository.save(user);
     }
 
-    async login(loginUserDto: LoginUserDto): Promise<LoginResponseDto> {
+    async login(loginUserDto: LoginUserDto) {
         const { username, password } = loginUserDto;
         const user = await this.usersRepository.findOne({ where: { username } });
 
@@ -51,9 +52,11 @@ export class UsersService {
             throw new UnauthorizedException('Invalid credentials');
         }
 
-        const payload = { username: user.username, sub: user.userID };
+        const tokens = await this.authService.generateTokens(user);
+
         return {
-            accessToken: this.jwtService.sign(payload),
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
             user: {
                 userID: user.userID,
                 username: user.username,
@@ -100,5 +103,47 @@ export class UsersService {
         return user;
     }
 
+    async withdrawUser(userId: string): Promise<void> {
+        const queryRunner = this.dataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
 
+        try {
+            const user = await this.usersRepository.findOne({ 
+                where: { userID: userId },
+                relations: ['createdQuizSets']
+            });
+
+            if (!user) {
+                throw new NotFoundException('User not found');
+            }
+
+            await queryRunner.manager.delete('quiz_attempt_history', [
+                { userId },
+                { quizSetId: In(user.createdQuizSets.map(set => set.setID)) }
+            ]);
+
+            await queryRunner.manager.delete('quiz_set_share', [
+                { userId },
+                { quizSetId: In(user.createdQuizSets.map(set => set.setID)) }
+            ]);
+
+            await queryRunner.manager.delete('short_answer_quiz', {
+                quizSetID: In(user.createdQuizSets.map(set => set.setID))
+            });
+
+            await queryRunner.manager.delete('quiz_set', {
+                creatorId: userId
+            });
+
+            await queryRunner.manager.delete('users', { userID: userId });
+
+            await queryRunner.commitTransaction();
+        } catch (error) {
+            await queryRunner.rollbackTransaction();
+            throw error;
+        } finally {
+            await queryRunner.release();
+        }
+    }
 }

@@ -72,7 +72,7 @@ export class QuizSetController {
     @Post(':id/share')
     async shareQuizSet(
         @Param('id') quizSetId: string,
-        @Body('username') username: string, // recipientId 대신 username을 받도록 수정
+        @Body('username') username: string,
         @GetUser() user: User
     ) {
         console.log(quizSetId, username);
